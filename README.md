@@ -1,126 +1,125 @@
 # Discord Voice "Leash" Self-Bot
 
-A simple self-bot that keeps selected users "leashed" to your voice channel. Whenever you move to a new voice channel, the bot automatically drags the configured users with you — and pulls them back if they try to leave.
+So, this is a little self-bot I threw together. Basically, you pick some people, and whenever you hop into a voice channel, they get dragged along with you. If they try to leave — boom, pulled right back. It's like a leash. Yeah.
 
-> ⚠️ **Disclaimer:** Self-bots violate [Discord's Terms of Service](https://discord.com/terms) and can result in your account being permanently banned. Use at your own risk, preferably on an alt account.
+> ⚠️ **Heads up:** Self-bots are against [Discord's ToS](https://discord.com/terms). You *will* get banned if you're careless. Use an alt, don't be dumb. I'm not responsible if your main gets nuked.
 
-## Features
+## What it does
 
-- 🐕 **Auto-drag:** When you join a voice channel, all "leashed" users are moved to the same channel.
-- 🔁 **Auto-pull-back:** If a leashed user leaves your channel, they are instantly pulled back.
-- 🎮 **Toggle on/off:** Enable or disable the leash at runtime via a terminal command.
+- 🐕 **Auto-drag** — You join a voice channel, everyone on the list gets yanked in with you.
+- 🔁 **Auto pull-back** — Someone tries to bail? They're back in before they can blink.
+- 🎮 **Toggle on/off** — Type `coleira` in the terminal to turn the whole thing on or off.
 
-## Requirements
+## What you need
 
-- [Node.js](https://nodejs.org/) (v16 or higher recommended)
-- `discord.js-selfbot` package
-- `readline` (bundled with Node.js)
+- [Node.js](https://nodejs.org/) (v16+ — don't use ancient versions)
+- `discord.js-selfbot`
 
-Install the dependency:
+Just run:
 
 ```bash
 npm install discord.js-selfbot
 ```
 
-## Setup
+## Setting it up
 
-Clone this repository or copy the script into a file (e.g. `leash.js`).
-
-Open the file and fill in the configuration constants at the top:
+1. Grab the script and save it as `leash.js` (or whatever you want, really).
+2. Open it and fill in the top part:
 
 ```js
-const SEU_TOKEN = '';   // Your Discord user token
-const SEU_ID    = '';   // Your own Discord user ID
+const SEU_TOKEN = '';   // your user token (NOT a bot token)
+const SEU_ID    = '';   // your own user ID
 
-const VITIMAS = [       // Users to keep leashed (their IDs)
+const VITIMAS = [       // the people you want to leash
   '',
   '',
   ''
 ];
 ```
 
-| Constant    | Description                                                      |
+Here's what each one means:
+
+| Thing       | What it is                                                       |
 |-------------|------------------------------------------------------------------|
-| `SEU_TOKEN` | Your personal Discord **user token** (not a bot token).          |
-| `SEU_ID`    | Your own Discord user ID — the "owner" of the leash.             |
-| `VITIMAS`   | Array of user IDs that should follow you around.                 |
+| `SEU_TOKEN` | Your personal Discord user token. Not a bot token. Don't mix them up. |
+| `SEU_ID`    | Your own user ID. You're the one holding the leash.              |
+| `VITIMAS`   | List of user IDs that should follow you around.                  |
 
-> 💡 **How to get IDs:** Enable *Developer Mode* in Discord settings (User Settings → Advanced), then right-click a user and choose **Copy ID**.
+> 💡 **Getting IDs:** Turn on Developer Mode (Settings → Advanced), then right-click anyone and hit "Copy ID".
 
-> 🔑 **How to get your token:** Open Discord in a browser, press `F12`, go to the **Network** tab, send any message, and look at the request headers for the `authorization` field. **Never share this token with anyone.**
+> 🔑 **Getting your token:** Open Discord in your browser, hit `F12`, go to the Network tab, send any message, and look for the `authorization` header. **Do NOT share this with anyone. Ever.**
 
-## Usage
-
-Run the script:
+## Running it
 
 ```bash
 node leash.js
 ```
 
-You should see:
+If it worked, you'll see something like:
 
 ```
 Logado como SeuUsuario#0000
 Digite "coleira" para ativar/desativar
 ```
 
-### Terminal commands
+### The one command you need
 
-| Command    | Action                                                          |
-|------------|-----------------------------------------------------------------|
-| `coleira`  | Toggles the leash **ON** 🟢 or **OFF** 🔴.                       |
+| Command   | What it does                          |
+|-----------|---------------------------------------|
+| `coleira` | Toggles the leash ON 🟢 or OFF 🔴     |
 
-When the leash is **ON**:
+While it's ON:
 
-- Join any voice channel → all leashed users are moved there automatically.
-- If a leashed user leaves → they are immediately pulled back.
+- You join a voice channel → everyone on the list gets moved there.
+- Someone on the list leaves → they get pulled right back.
 
-When the leash is **OFF**, the bot ignores all voice events.
+While it's OFF, the bot just sits there doing nothing. Peaceful.
 
-## How It Works
+## How it actually works
 
-The script listens to two events:
+Two events do all the work:
 
-1. **`ready`** — Fires when the client logs in. Starts the terminal listener for the `coleira` toggle.
+1. **`ready`** — Fires when you log in. Kicks off the terminal listener so you can type `coleira`.
+2. **`voiceStateUpdate`** — Fires whenever anyone changes voice state. Then:
 
-2. **`voiceStateUpdate`** — Fires whenever **anyone** in a shared guild changes voice state. Two rules apply:
+   - **Drag:** If *you* join a channel, it saves that channel and drags everyone from `VITIMAS` in.
+   - **Pull back:** If someone from `VITIMAS` leaves, they get forced back.
 
-   - **Rule 1 (drag):** If *you* (`SEU_ID`) join a channel, save it as `canalAtual` and move every user in `VITIMAS` into it.
-   - **Rule 2 (pull back):** If a user in `VITIMAS` leaves `canalAtual`, force them back into it.
+There's a flag called `coleiraAtiva` that gates everything — so nothing happens until you flip the switch.
 
-A global flag `coleiraAtiva` gates both rules, so nothing happens until you type `coleira`.
+## Example
 
-## Example Scenario
+Say your list looks like this:
 
 ```
 VITIMAS = ['123456789', '987654321']
 ```
 
-1. You run `node leash.js` and type `coleira` in the terminal → leash is **ACTIVE** 🟢.
-2. You join voice channel **#general** → users `123456789` and `987654321` are dragged in.
-3. User `123456789` tries to leave → they are pulled right back.
-4. You switch to voice channel **#gaming** → both users follow you automatically.
-5. Type `coleira` again → leash is **OFF** 🔴. Everyone can leave freely.
+1. You run the script and type `coleira` → leash is ON 🟢
+2. You join **#general** → both guys get dragged in.
+3. One of them tries to leave → instantly pulled back. Sorry buddy.
+4. You switch to **#gaming** → they follow you. Obviously.
+5. Type `coleira` again → OFF 🔴. Everyone's free now.
 
-## Troubleshooting
+## If something breaks
 
-| Problem                              | Likely Cause                                                    |
-|--------------------------------------|-----------------------------------------------------------------|
-| `Error: 401 Unauthorized`            | Invalid or expired `SEU_TOKEN`.                                 |
-| `Erro ao mover ...: Unknown Member`  | The user is not in the same guild as you.                       |
-| `Erro ao mover ...: Missing Permissions` | You don't have **Move Members** permission in that channel. |
-| Users not being dragged              | Leash is OFF, or `SEU_ID` / `VITIMAS` IDs are wrong.            |
-| Script exits immediately             | Node.js version too old, or missing `discord.js-selfbot`.       |
+| What you see                              | What's probably wrong                                        |
+|-------------------------------------------|--------------------------------------------------------------|
+| `Error: 401 Unauthorized`                 | Token's wrong or expired.                                    |
+| `Erro ao mover ...: Unknown Member`       | That person isn't in the same server as you.                 |
+| `Erro ao mover ...: Missing Permissions`  | You don't have "Move Members" permission in that channel.    |
+| Nobody's getting dragged                  | Leash is off, or your IDs are wrong.                         |
+| Script closes instantly                   | Node's too old, or you forgot to install `discord.js-selfbot`. |
 
-## Legal / Ethical Notice
+## Please don't be a jerk
 
-This tool is provided **for educational purposes only**. Using a self-bot to control other users' voice state without their consent may:
+This is for learning and messing around. Using it to mess with people who didn't sign up for it is:
 
-- Violate Discord's Terms of Service → **account termination**.
-- Be considered harassment in your jurisdiction.
+- Against Discord's ToS → **ban hammer**.
+- Probably harassment where you live.
 
-**Do not use this on people who haven't agreed to it.** The author assumes no responsibility for any consequences.
+Don't do it to strangers. Don't do it to people who said no. I'm not responsible if you ignore this.
 
 ## License
 
-MIT — do whatever you want, just don't blame me when your account gets nuked.
+MIT. Do whatever. Just don't come crying to me when your account gets banned.
